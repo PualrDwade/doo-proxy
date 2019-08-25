@@ -5,16 +5,13 @@ doo-proxy is a simple http/https proxy implement by golang
 
 ## begin to use
 
-``` git
-git get github.com/PualrDwade/doo-proxy
+``` bash
+go get github.com/PualrDwade/doo-proxy
 
 go install github.com/PualrDwade/doo-proxy
 
-for linux: 
-./doo-proxy
+./doo-proxy -credential "aksldjhlkasdj" (your credential)
 
-for windows:
-doo-proxy.exe 
 ```
 
 ## the key funciton

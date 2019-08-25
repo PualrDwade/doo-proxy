@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	"io"
 	"net"
@@ -14,8 +15,15 @@ import (
 	"github.com/siddontang/go/log"
 )
 
+var credential = flag.String("credential", "", "set set  for proxy server")
+
 func main() {
-	proxy := NewProxyServer("localhost:5050", "GIUTdLKSJKPfHKLHdgs")
+	flag.Parse()
+	if credential == nil || *credential == "" {
+		flag.Usage()
+		return
+	}
+	proxy := NewProxyServer("localhost:5050", *credential)
 	proxy.Start()
 }
 
