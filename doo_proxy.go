@@ -23,65 +23,65 @@ func main() {
 		flag.Usage()
 		return
 	}
-	proxy := NewProxyServer("localhost:5050", *credential)
+	proxy := NewDooProxy("localhost:5050", *credential)
 	proxy.Start()
 }
 
-// NewProxyServer return proxy server instance
-func NewProxyServer(addr, credential string) ProxyServer {
+// NewDooProxy return proxy server instance
+func NewDooProxy(addr, credential string) DooProxy {
 	// todo validate addr
-	return &proxyServer{
+	return &dooProxy{
 		addr:       addr,
 		credential: credential,
 	}
 }
 
-// ProxyServer http/https proxy server
-type ProxyServer interface {
+// DooProxy http/https proxy server
+type DooProxy interface {
 	Start()
 }
 
-type proxyServer struct {
+type dooProxy struct {
 	listener   net.Listener
 	addr       string
 	credential string
 }
 
 // Start start a proxy server
-func (server *proxyServer) Start() {
+func (proxy *dooProxy) Start() {
 	var err error
-	server.listener, err = net.Listen("tcp", server.addr)
+	proxy.listener, err = net.Listen("tcp", proxy.addr)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	if server.credential != "" {
-		log.Infof("use credential %v for proxy server", server.credential)
+	if proxy.credential != "" {
+		log.Infof("use credential %v for proxy server", proxy.credential)
 	}
 
-	log.Infof("listen in %s, wating client to connet...", server.addr)
+	log.Infof("listen in %s, wating client to connet...", proxy.addr)
 	for {
-		conn, err := server.listener.Accept()
+		conn, err := proxy.listener.Accept()
 		if err != nil {
 			log.Errorf("accept client faild : %v ", err)
 		}
-		go server.handleConn(conn)
+		go proxy.handleConn(conn)
 	}
 }
 
-func (server *proxyServer) handleConn(clientConn net.Conn) {
+func (proxy *dooProxy) handleConn(clientConn net.Conn) {
 	// handle cient conn step:
 	// 1. extract base information from cient request
 	// 2. connect remote host and hold connction
 	// 3. begin transport data from client and remote server
 	defer clientConn.Close()
-	rawHTTPRequestHeader, remote, credential, isHTTPS, err := server.extractTunnelInfo(clientConn)
+	rawHTTPRequestHeader, remote, credential, isHTTPS, err := proxy.extractTunnelInfo(clientConn)
 	if err != nil {
 		log.Error(err.Error())
 		return
 	}
 
-	if server.auth(clientConn, credential) == false {
+	if proxy.auth(clientConn, credential) == false {
 		log.Error("Auth fail: " + credential)
 		return
 	}
@@ -111,12 +111,12 @@ func (server *proxyServer) handleConn(clientConn net.Conn) {
 
 	// build bidirectional-streams
 	log.Info("begin tunnel:", clientConn.RemoteAddr(), "<->", remote)
-	server.tunnel(clientConn, remoteConn)
+	proxy.tunnel(clientConn, remoteConn)
 	log.Info("stop tunnel:", clientConn.RemoteAddr(), "<->", remote)
 }
 
 // extractTunnelInfo extract tunnel info from cient request
-func (server *proxyServer) extractTunnelInfo(conn net.Conn) (rawReqHeader bytes.Buffer, host, credential string, isHTTPS bool, err error) {
+func (proxy *dooProxy) extractTunnelInfo(conn net.Conn) (rawReqHeader bytes.Buffer, host, credential string, isHTTPS bool, err error) {
 	br := bufio.NewReader(conn)
 	tp := textproto.NewReader(br)
 
@@ -172,7 +172,7 @@ func (server *proxyServer) extractTunnelInfo(conn net.Conn) (rawReqHeader bytes.
 	return
 }
 
-func (server *proxyServer) tunnel(clientConn net.Conn, remoteConn net.Conn) {
+func (proxy *dooProxy) tunnel(clientConn net.Conn, remoteConn net.Conn) {
 	group := &sync.WaitGroup{}
 	group.Add(2)
 	go func() {
@@ -203,8 +203,8 @@ func parseRequestLine(line string) (method, requestURI, proto string, ok bool) {
 }
 
 // auth provide basic authentication
-func (server *proxyServer) auth(conn net.Conn, credential string) bool {
-	if server.isAuth() && server.validateCredential(credential) {
+func (proxy *dooProxy) auth(conn net.Conn, credential string) bool {
+	if proxy.isAuth() && proxy.validateCredential(credential) {
 		return true
 	}
 	_, err := conn.Write(
@@ -215,13 +215,13 @@ func (server *proxyServer) auth(conn net.Conn, credential string) bool {
 	return false
 }
 
-func (server *proxyServer) isAuth() bool {
-	return server.credential != ""
+func (proxy *dooProxy) isAuth() bool {
+	return proxy.credential != ""
 }
 
-func (server *proxyServer) validateCredential(credential string) bool {
+func (proxy *dooProxy) validateCredential(credential string) bool {
 	c := strings.Split(credential, " ")
-	if len(c) == 2 && strings.EqualFold(c[0], "Basic") && c[1] == server.credential {
+	if len(c) == 2 && strings.EqualFold(c[0], "Basic") && c[1] == proxy.credential {
 		return true
 	}
 	return false
