@@ -3,7 +3,7 @@
 
 doo-proxy is a simple http/https proxy implement by golang
 
-## begin to use
+## quick start
 
 ``` bash
 go get github.com/PualrDwade/doo-proxy
@@ -14,11 +14,11 @@ go install github.com/PualrDwade/doo-proxy
 
 ```
 
-## the key funciton
+## key funciton
 
 all thing to understand is a code snippet bellow:
 ```golang
-func (server *proxyServer) tunnel(clientConn net.Conn, remoteConn net.Conn) {
+func (proxy *dooProxy) tunnel(clientConn net.Conn, remoteConn net.Conn) {
 	group := &sync.WaitGroup{}
 	group.Add(2)
 	go func() {
